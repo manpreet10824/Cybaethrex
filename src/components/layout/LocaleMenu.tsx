@@ -55,7 +55,7 @@ function writeStored(value: string) {
   listeners.forEach((l) => l());
 }
 
-export function LocaleMenu({ compact = false }: { compact?: boolean }) {
+export function LocaleMenu() {
   const stored = useSyncExternalStore(subscribe, readStored, () => null);
 
   // an unavailable or unknown stored code falls back rather than stranding the
@@ -77,14 +77,17 @@ export function LocaleMenu({ compact = false }: { compact?: boolean }) {
     <Menu.Root modal={false}>
       <Menu.Trigger
         aria-label={`Language: ${current.english}`}
-        className={`group flex items-center gap-2 rounded-full text-[13.5px] text-muted transition-colors duration-200 hover:text-ink ${
-          compact
-            ? "border border-line-strong px-3 py-1.5"
-            : "px-2.5 py-2 hover:bg-surface-2"
-        }`}
+        className="group flex items-center gap-2 rounded-full px-2.5 py-2 text-[13.5px] text-muted transition-colors duration-200 hover:bg-surface-2 hover:text-ink"
       >
         <Globe size={15} strokeWidth={1.8} className="shrink-0" aria-hidden />
-        <span className={compact ? "" : "hidden xl:inline"}>
+        {/*
+          The label is dropped only at the two widths where it measurably will
+          not fit: beside the logo below sm, and between lg (where the full nav
+          row appears) and 1120px, where there is under 60px of clear space
+          against the 54px the word needs. The globe carries it alone there,
+          and the aria-label still announces the current language.
+        */}
+        <span className="hidden sm:max-lg:inline min-[1120px]:inline">
           {current.label}
         </span>
         <ChevronDown

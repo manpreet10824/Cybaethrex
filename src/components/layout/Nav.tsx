@@ -241,9 +241,7 @@ export function Nav() {
 
           <div className="flex items-center gap-1.5">
             <SiteSearch />
-            <div className="hidden lg:block">
-              <LocaleMenu />
-            </div>
+            <LocaleMenu />
             <ThemeToggle />
             <Link
               href="/contact"
@@ -329,18 +327,17 @@ export function Nav() {
                   </Link>
                 </div>
 
-                <div className="mt-auto flex flex-col gap-3 border-t border-line p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <Link
-                      href="/contact"
-                      onClick={() => setOpen(false)}
-                      className="inline-flex rounded-full bg-signal px-5 py-2.5 text-[13px] font-medium text-[var(--on-signal)]"
-                    >
-                      Contact us
-                    </Link>
-                    <ThemeToggle />
-                  </div>
-                  <LocaleMenu compact />
+                {/* the language control lives in the bar at every width now,
+                    so the sheet does not carry a second copy of it */}
+                <div className="mt-auto flex items-center justify-between gap-3 border-t border-line p-4">
+                  <Link
+                    href="/contact"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex rounded-full bg-signal px-5 py-2.5 text-[13px] font-medium text-[var(--on-signal)]"
+                  >
+                    Contact us
+                  </Link>
+                  <ThemeToggle />
                 </div>
               </SheetContent>
             </Sheet>

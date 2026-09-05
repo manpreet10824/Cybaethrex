@@ -19,7 +19,7 @@ import {
  * Entirely client-side. The corpus is a few hundred short strings, so shipping
  * it beats a round trip and results appear on the keystroke.
  */
-export function SiteSearch({ compact = false }: { compact?: boolean }) {
+export function SiteSearch() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
@@ -113,11 +113,7 @@ export function SiteSearch({ compact = false }: { compact?: boolean }) {
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Trigger
         aria-label="Search Cybaethrex"
-        className={
-          compact
-            ? "flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-muted transition-colors duration-200 hover:border-signal hover:text-signal"
-            : "flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-surface-2 hover:text-ink"
-        }
+        className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors duration-200 hover:bg-surface-2 hover:text-ink"
       >
         <Search size={16} strokeWidth={1.8} aria-hidden />
       </Dialog.Trigger>
