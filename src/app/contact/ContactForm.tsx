@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, LoaderCircle, ShieldCheck, TriangleAlert } from "lucide-react";
+import { CONTACT } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,10 +80,85 @@ function Field({
   );
 }
 
+type Status = "idle" | "sending" | "sent" | "error";
+
+/** Last resort when delivery fails: hand the reader their own draft back. */
+function mailtoFallback(values: {
+  name: string;
+  company: string;
+  email: string;
+  engagement: string[];
+  context: string;
+}) {
+  const subject = values.company
+    ? `Enquiry: ${values.name} at ${values.company}`
+    : `Enquiry: ${values.name}`;
+  const body = [
+    `Name: ${values.name}`,
+    `Company: ${values.company || "-"}`,
+    `Email: ${values.email}`,
+    `Interested in: ${values.engagement.join(", ") || "-"}`,
+    "",
+    values.context,
+  ].join("\n");
+  return `mailto:${CONTACT.emails[0]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 export function ContactForm() {
   const { reduced } = useMotionFlags();
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
+  const [problem, setProblem] = useState("");
+  const [fallback, setFallback] = useState("");
   const [engagement, setEngagement] = useState<string[]>([ENGAGEMENTS[0]]);
+
+  const sent = status === "sent";
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (status === "sending") return;
+
+    const data = new FormData(e.currentTarget);
+    const values = {
+      name: String(data.get("name") ?? "").trim(),
+      company: String(data.get("company") ?? "").trim(),
+      email: String(data.get("email") ?? "").trim(),
+      context: String(data.get("context") ?? "").trim(),
+      engagement,
+      website: String(data.get("website") ?? ""),
+    };
+
+    setStatus("sending");
+    setProblem("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (res.ok) {
+        setStatus("sent");
+        return;
+      }
+
+      setProblem(
+        res.status === 429
+          ? "That is several messages in a short time. Give it a few minutes, or email us directly."
+          : res.status === 422
+            ? "Some details did not look right. Check the email address and that the message is a line or two long."
+            : "We could not deliver that just now.",
+      );
+      // a 422 is the reader's to fix; anything else is ours, so offer the
+      // route that does not depend on us
+      if (res.status !== 422) setFallback(mailtoFallback(values));
+      setStatus("error");
+    } catch {
+      setProblem("We could not reach the server. Your connection may be down.");
+      setFallback(mailtoFallback(values));
+      setStatus("error");
+    }
+  }
 
   return (
     <div className="w-full">
@@ -98,22 +174,22 @@ export function ContactForm() {
           >
             <p className="mono flex items-center gap-2 text-[11px] tracking-[0.2em] text-signal">
               <ShieldCheck size={14} strokeWidth={1.6} aria-hidden />
-              MESSAGE READY
+              MESSAGE SENT
             </p>
             <p className="mt-4 text-[15px] leading-relaxed text-ink">
-              This form is not wired to a backend yet.
+              Thank you. It is with us.
             </p>
             <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-              Connect it to your inbox, CRM or ticketing system before going
-              live, the submit handler is the only place that needs to change.
+              A person reads every enquiry and replies {CONTACT.responseTime}.
+              If it is urgent, {CONTACT.emails[0]} reaches the same inbox.
             </p>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setSent(false)}
+              onClick={() => setStatus("idle")}
               className="mt-6 h-auto rounded-full border-line-strong bg-transparent px-5 py-2.5 text-[12.5px] hover:border-signal hover:bg-transparent hover:text-signal"
             >
-              Edit the message
+              Send another
             </Button>
           </motion.div>
         ) : (
@@ -125,11 +201,25 @@ export function ContactForm() {
             exit={reduced ? undefined : { opacity: 0, y: -8 }}
             transition={{ duration: DUR.normal, ease: EASE_OUT }}
             className="flex flex-col gap-6"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSent(true);
-            }}
+            onSubmit={onSubmit}
           >
+            {/* Honeypot. Off-screen rather than display:none, which some bots
+                check for, and removed from the tab order and the a11y tree so
+                no real person can reach it. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-[-9999px] h-0 w-0 overflow-hidden"
+            >
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             <motion.div
               variants={reduced ? undefined : cineIn}
               className="grid gap-6 sm:grid-cols-2"
@@ -193,20 +283,58 @@ export function ContactForm() {
             >
               <Button
                 type="submit"
-                className="group h-auto rounded-full px-7 py-3.5 text-[13px] font-medium hover:bg-[var(--signal-hover)]"
+                disabled={status === "sending"}
+                className="group h-auto rounded-full px-7 py-3.5 text-[13px] font-medium hover:bg-[var(--signal-hover)] disabled:opacity-70"
               >
-                Send it over
-                <ArrowRight
-                  size={14}
-                  strokeWidth={1.6}
-                  className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[3px]"
-                  aria-hidden
-                />
+                {status === "sending" ? "Sending" : "Send it over"}
+                {status === "sending" ? (
+                  <LoaderCircle
+                    size={14}
+                    strokeWidth={1.8}
+                    className="animate-spin"
+                    aria-hidden
+                  />
+                ) : (
+                  <ArrowRight
+                    size={14}
+                    strokeWidth={1.6}
+                    className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[3px]"
+                    aria-hidden
+                  />
+                )}
               </Button>
               <p className="text-[12px] text-muted-dim">
-We reply within one business day. Your details stay confidential.
+                We reply {CONTACT.responseTime}. Your details stay confidential.
               </p>
             </motion.div>
+
+            {status === "error" ? (
+              <div
+                role="alert"
+                className="rounded-xl border border-threat/40 bg-threat/5 p-5"
+              >
+                <p className="mono flex items-center gap-2 text-[11px] tracking-[0.2em] text-threat">
+                  <TriangleAlert size={13} strokeWidth={1.8} aria-hidden />
+                  NOT SENT
+                </p>
+                <p className="mt-3 text-[13.5px] leading-relaxed text-ink">
+                  {problem}
+                </p>
+                {fallback ? (
+                  <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                    Nothing is lost.{" "}
+                    <a
+                      href={fallback}
+                      className="font-medium text-signal underline underline-offset-4"
+                    >
+                      Open it in your email client
+                    </a>{" "}
+                    with everything you typed already filled in, or write to{" "}
+                    {CONTACT.emails[0]}.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </motion.form>
         )}
       </AnimatePresence>

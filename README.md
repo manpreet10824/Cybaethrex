@@ -148,11 +148,34 @@ src/lib/gsap.ts          plugin registration, scrub settings (GSAP)
 src/lib/hooks.ts         cursor light, viewport, scroll helpers
 ```
 
+## Contact form
+
+The form posts to `POST /api/contact`, which delivers the enquiry by email
+through Resend. Copy `.env.example` and set the variables in Vercel under
+**Project → Settings → Environment Variables**:
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `RESEND_API_KEY` | yes | From resend.com → API Keys |
+| `CONTACT_TO` | no | Defaults to `CONTACT.emails[0]` in `src/lib/content.ts` |
+| `CONTACT_FROM` | no | Must be on a domain verified in Resend |
+
+`CONTACT_FROM` defaults to Resend's sandbox sender, which only delivers to the
+address the Resend account was registered with. That is enough to go live if
+the account is registered as `support@cybaethrex.com`; verifying the domain in
+Resend and sending from an address on it is the better end state.
+
+The route escapes all submitted text into the mail body, drops anything that
+fills the honeypot field, and throttles to five submissions per IP per ten
+minutes. The throttle is in-memory, so it is per warm serverless instance and
+best-effort by design; the honeypot does the real work.
+
+If `RESEND_API_KEY` is unset, or delivery fails, the form falls back to opening
+the reader's own mail client with everything they typed already filled in. The
+same fallback covers the static export build, which omits the API route.
+
 ## Not wired up yet
 
-- **Contact form** (`src/app/contact/ContactForm.tsx`) validates and shows a
-  confirmation state, but does not post anywhere. Point `onSubmit` at your
-  inbox, CRM or ticketing system before going live.
 - **Legal pages** (privacy, terms, responsible disclosure, refunds) are linked
   from the footer but point at `/contact` until the documents exist.
 - **Claims to confirm before launch.** Two from the previous site were left

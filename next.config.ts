@@ -1,12 +1,16 @@
 import type { NextConfig } from "next";
 
 /**
- * The site has no server features: no route handlers, no server actions, no
- * runtime data. Every route is static or SSG, so it can ship either way.
+ * Every page is static or SSG. The one server feature is POST /api/contact,
+ * which delivers the contact form, so the site ships either way:
  *
- *   npm run build          server output (Vercel, Node hosting)
+ *   npm run build          server output (Vercel, Node hosting). The contact
+ *                          form posts to the API route and is delivered.
  *   npm run build:static   a plain `out/` folder (Cloudflare Pages, Netlify,
- *                          GitHub Pages, S3, any static host)
+ *                          GitHub Pages, S3, any static host). The API route
+ *                          is omitted, so the form's POST fails and it falls
+ *                          back to opening the draft in the reader's mail
+ *                          client. Pages are identical.
  *
  * Static export cannot use the Next image optimizer, so images are passed
  * through unoptimized. That costs nothing here: the only images are the logo
