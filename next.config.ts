@@ -18,6 +18,13 @@ import type { NextConfig } from "next";
  */
 const staticExport = process.env.STATIC_EXPORT === "1";
 
+/**
+ * `standalone` emits .next/standalone with a self-contained server.js and only
+ * the node_modules actually reached, which is what the Dockerfile copies. Set
+ * by the container build; harmless everywhere else.
+ */
+const standalone = process.env.BUILD_STANDALONE === "1";
+
 const nextConfig: NextConfig = {
   ...(staticExport
     ? {
@@ -27,7 +34,9 @@ const nextConfig: NextConfig = {
         // relative asset resolution correct across all of them.
         trailingSlash: true,
       }
-    : {}),
+    : standalone
+      ? { output: "standalone" }
+      : {}),
 
   // Security headers. Ignored by `output: "export"` (a static host has no
   // server to send them), so the same rules are mirrored in public/_headers
