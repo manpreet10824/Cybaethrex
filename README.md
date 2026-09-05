@@ -150,29 +150,59 @@ src/lib/hooks.ts         cursor light, viewport, scroll helpers
 
 ## Contact form
 
-The form posts to `POST /api/contact`, which delivers the enquiry by email
-through Resend. Copy `.env.example` and set the variables in Vercel under
-**Project → Settings → Environment Variables**:
+The form posts to `POST /api/contact`. Validation, spam handling and the
+message body are ours; where the message then goes is configuration. Copy
+`.env.example` and set **one** of these routes in Vercel under **Project →
+Settings → Environment Variables**. They are tried in this order.
+
+### 1. Webhook (recommended: Google Apps Script)
+
+Free, no DNS, no API account, and it produces a real email with the sender in
+`Reply-To`, so replying in the inbox reaches the person who wrote in. Full
+setup instructions are in [`docs/contact-apps-script.gs`](docs/contact-apps-script.gs).
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `CONTACT_WEBHOOK_URL` | yes | The Apps Script `/exec` URL. Also fits Zapier, Make, n8n, or your own endpoint |
+| `CONTACT_WEBHOOK_SECRET` | no | Sent as `X-Contact-Secret` and in the body, so only your site can post to the script |
+
+### 2. Google Form
+
+Responses collect in the linked Sheet. No API or key: the route posts
+form-encoded to the form's public `formResponse` endpoint.
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `GOOGLE_FORM_ACTION` | yes | From the live form's page source, ends in `/formResponse` |
+| `GOOGLE_FORM_FIELDS` | yes | JSON map of our field names to `entry.NNN` ids, from the same source |
+
+Worth knowing before choosing this one: you get a spreadsheet row, not an
+email, and Google's own new-response notification links to the form rather
+than carrying the answers. Pair it with option 1 if you want both.
+
+### 3. Resend
+
+An email API. Needs an account, and a verified domain to send from your own
+address.
 
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `RESEND_API_KEY` | yes | From resend.com → API Keys |
-| `CONTACT_TO` | no | Defaults to `CONTACT.emails[0]` in `src/lib/content.ts` |
-| `CONTACT_FROM` | no | Must be on a domain verified in Resend |
+| `CONTACT_FROM` | no | Must be on a domain verified in Resend. The default is Resend's sandbox sender, which only delivers to the address the account was registered with |
 
-`CONTACT_FROM` defaults to Resend's sandbox sender, which only delivers to the
-address the Resend account was registered with. That is enough to go live if
-the account is registered as `support@cybaethrex.com`; verifying the domain in
-Resend and sending from an address on it is the better end state.
+### Common
+
+`CONTACT_TO` sets where enquiries land, defaulting to `CONTACT.emails[0]` in
+`src/lib/content.ts`.
 
 The route escapes all submitted text into the mail body, drops anything that
 fills the honeypot field, and throttles to five submissions per IP per ten
 minutes. The throttle is in-memory, so it is per warm serverless instance and
 best-effort by design; the honeypot does the real work.
 
-If `RESEND_API_KEY` is unset, or delivery fails, the form falls back to opening
-the reader's own mail client with everything they typed already filled in. The
-same fallback covers the static export build, which omits the API route.
+If nothing is configured, or delivery fails, the form falls back to opening the
+reader's own mail client with everything they typed already filled in. The same
+fallback covers the static export build, which omits the API route.
 
 ## Not wired up yet
 
