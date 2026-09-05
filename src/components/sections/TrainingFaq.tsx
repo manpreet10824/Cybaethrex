@@ -1,0 +1,1 @@
+export { TrainingFaq } from "./Faq";

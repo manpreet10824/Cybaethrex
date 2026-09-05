@@ -1,26 +1,814 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+/* shadcn ships `dark:` keyed to a .dark class, ours is the data attribute. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================================
+   CYBAETHREX, design tokens
+
+   Dark is the brand default. Light is a full second theme, not an
+   inversion: the whole palette (including the RGB triplets the canvas
+   and SVG diagrams read) flips on :root[data-theme="light"].
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  /* raw channels, consumed as rgb(var(--rgb-x) / <alpha>) */
+  --rgb-bg: 8 8 10;
+  --rgb-panel: 8 8 10;
+  --rgb-surface: 17 17 20;
+  --rgb-surface-2: 24 24 28;
+  --rgb-hair: 150 150 158;
+  --rgb-signal: 248 127 23;
+  --rgb-threat: 232 64 78;
+  --rgb-threat-lift: 244 118 128;
+  --rgb-ai: 127 168 217;
+  --rgb-amber: 248 176 60;
+
+  --bg: #08080a;
+  --bg-deep: #050506;
+  --surface: #111114;
+  --surface-2: #18181c;
+  --line: rgb(var(--rgb-hair) / 0.14);
+  --line-strong: rgb(var(--rgb-hair) / 0.26);
+  --ink: #ededef;
+  --muted: #9a9aa2;
+  --muted-dim: #6b6b73;
+
+  /* Brand: the logo gradient runs #f87f17 -> #c11126 over charcoal #434343.
+     Orange carries interaction, red carries risk. Each is tuned per theme so
+     both clear WCAG AA, raw #f87f17 scores only 2.46 on a light ground. */
+  --brand-orange: #f87f17;
+  --brand-red: #c11126;
+  --brand-charcoal: #434343;
+
+  --signal: #f87f17;
+  --signal-hover: #ff9233;
+  --on-signal: #1a0e04;
+  --threat: #e8404e;
+  --ai: #7fa8d9;
+  --amber: #f8b03c;
+
+  /* per-theme intensities */
+  --grid-alpha: 0.06;
+  --grid-alpha-fine: 0.05;
+  --cursor-light-alpha: 0.1;
+  --card-glow-alpha: 0.09;
+  /* canvas strokes need more weight on a light ground */
+  --canvas-boost: 1;
+
+  /* motion timing, see MOTION TIMING / EASING */
+  --dur-fast: 200ms;
+  --dur-normal: 400ms;
+  --dur-cine: 800ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --rgb-bg: 248 248 249;
+  --rgb-panel: 255 255 255;
+  --rgb-surface: 255 255 255;
+  --rgb-surface-2: 242 242 245;
+  --rgb-hair: 88 88 96;
+  --rgb-signal: 168 73 10;
+  --rgb-threat: 193 17 38;
+  --rgb-threat-lift: 160 14 31;
+  --rgb-ai: 44 95 148;
+  --rgb-amber: 156 104 8;
+
+  --bg: #f8f8f9;
+  --bg-deep: #eeeef1;
+  --surface: #ffffff;
+  --surface-2: #f2f2f5;
+  --line: rgb(var(--rgb-hair) / 0.2);
+  --line-strong: rgb(var(--rgb-hair) / 0.32);
+  --ink: #16161a;
+  --muted: #55555d;
+  --muted-dim: #74747d;
+
+  --signal: #a8490a;
+  --signal-hover: #8f3d07;
+  --on-signal: #ffffff;
+  --threat: #c11126;
+  --ai: #2c5f94;
+  --amber: #9c6808;
+
+  --grid-alpha: 0.1;
+  --grid-alpha-fine: 0.08;
+  --cursor-light-alpha: 0.12;
+  --card-glow-alpha: 0.1;
+  --canvas-boost: 2.1;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-bg-deep: var(--bg-deep);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-muted-dim: var(--muted-dim);
+  --color-signal: var(--signal);
+  --color-threat: var(--threat);
+  --color-ai: var(--ai);
+  --color-amber: var(--amber);
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-display);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  /* Lenis owns smoothing; native smooth scrolling would fight it. */
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  transition:
+    background-color 260ms var(--ease-out),
+    color 260ms var(--ease-out);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: clip;
+  font-synthesis-weight: none;
+}
+
+::selection {
+  background: rgb(var(--rgb-signal) / 0.24);
+  color: var(--ink);
+}
+
+/* Focus visibility is never animated away. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* The search field is the only focus target when its dialog opens, and the
+   caret already says so. A ring around a full-width field reads as an error
+   state rather than as focus, so this one input opts out. */
+.search-field:focus-visible {
+  outline: none;
+}
+
+/* Headlines carry the display face; body stays on the UI grotesque. */
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+}
+
+h1 {
+  letter-spacing: -0.034em;
+}
+
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Shared continuous field so sections bleed into one another. */
+.field-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      rgb(var(--rgb-hair) / var(--grid-alpha)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(var(--rgb-hair) / var(--grid-alpha)) 1px,
+      transparent 1px
+    );
+  background-size: 64px 64px;
+}
+
+.field-grid-fine {
+  background-image:
+    linear-gradient(
+      to right,
+      rgb(var(--rgb-hair) / var(--grid-alpha-fine)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(var(--rgb-hair) / var(--grid-alpha-fine)) 1px,
+      transparent 1px
+    );
+  background-size: 16px 16px;
+}
+
+/* Radial cursor light on cards (desktop; vars set by pointer handler). */
+.cursor-light::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--dur-normal) var(--ease-out);
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(var(--rgb-signal) / var(--cursor-light-alpha)),
+    transparent 62%
+  );
+  pointer-events: none;
+}
+
+.cursor-light:hover::before,
+.cursor-light:focus-within::before {
+  opacity: 1;
+}
+
+/* Animated underline for links. */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Ambient, slow, continuous motion (2-8s band). */
+@keyframes drift-y {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
+}
+@keyframes drift-xy {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(6px, -8px, 0); }
+  66% { transform: translate3d(-5px, 5px, 0); }
+}
+@keyframes pulse-ring {
+  0% { opacity: 0.5; transform: scale(1); }
+  70% { opacity: 0; transform: scale(1.9); }
+  100% { opacity: 0; transform: scale(1.9); }
+}
+@keyframes dash-flow {
+  to { stroke-dashoffset: -100; }
+}
+@keyframes sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+.orbit-float {
+  animation: drift-xy var(--float-dur, 9s) var(--ease-soft) infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+.orbit-float:hover,
+.orbit-float:focus-within {
+  animation-play-state: paused;
+}
+
+.flow-dash {
+  stroke-dasharray: 4 10;
+  animation: dash-flow 3s linear infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* ============================================================
+   REDUCED MOTION, content and navigation stay fully usable
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .cursor-light::before { display: none; }
+  .orbit-float { animation: none; }
+  .flow-dash { animation: none; stroke-dasharray: 4 10; }
+}
+
+/* ============================================================
+   Consulting cards: hover activates the schematic, not a fade
+   ============================================================ */
+.svc-card {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-normal) var(--ease-out),
+    background-color var(--dur-normal) var(--ease-out);
+}
+.svc-card:hover,
+.svc-card:focus-within {
+  transform: translateY(-5px);
+  border-color: rgb(var(--rgb-signal) / 0.38);
+  background-color: rgb(var(--rgb-surface-2) / 0.85);
+}
+
+.svc-n {
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.svc-card:hover .svc-n,
+.svc-card:focus-within .svc-n {
+  color: var(--signal);
+}
+
+/* Legible at rest, redrawn and lit on hover, never an invisible graphic. */
+.svc-glyph .svc-line {
+  fill: none;
+  stroke: rgb(var(--rgb-hair) / 0.4);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--dur-normal) var(--ease-out);
+}
+
+@keyframes svc-draw {
+  from {
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dasharray: 220;
+    stroke-dashoffset: 0;
+  }
+}
+.svc-glyph .svc-dot {
+  fill: rgb(var(--rgb-hair) / 0.55);
+  transition:
+    fill var(--dur-normal) var(--ease-out),
+    r var(--dur-normal) var(--ease-out);
+}
+.svc-glyph .svc-dot--threat {
+  fill: rgb(var(--rgb-threat) / 0.6);
+}
+.svc-card:hover .svc-glyph .svc-line,
+.svc-card:focus-within .svc-glyph .svc-line {
+  stroke: rgb(var(--rgb-signal) / 0.85);
+  animation: svc-draw var(--dur-cine) var(--ease-out) both;
+}
+.svc-card:hover .svc-glyph .svc-dot,
+.svc-card:focus-within .svc-glyph .svc-dot {
+  fill: var(--signal);
+}
+.svc-card:hover .svc-glyph .svc-dot--threat,
+.svc-card:focus-within .svc-glyph .svc-dot--threat {
+  fill: var(--threat);
+}
+
+.svc-arrow {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.svc-card:hover .svc-arrow,
+.svc-card:focus-within .svc-arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svc-card:hover,
+  .svc-card:focus-within {
+    transform: none;
+  }
+  .svc-card:hover .svc-glyph .svc-line,
+  .svc-card:focus-within .svc-glyph .svc-line {
+    animation: none;
+  }
+}
+
+/* No .dark block: the bridge tokens above point at Cybaethrex tokens, which
+   already flip on :root[data-theme="light"]. One source of truth. */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+/* ============================================================
+   Scroll-state styling.
+
+   GSAP decides which card/stage is active and stamps a data
+   attribute; CSS does the rest. Nothing here re-renders React,
+   so scrolling stays off the React render path entirely.
+   ============================================================ */
+.track-card {
+  opacity: 0.42;
+  transform: scale(0.945);
+  border-color: var(--line);
+  background-color: rgb(var(--rgb-surface) / 0.6);
+  transition:
+    opacity var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out),
+    border-color var(--dur-normal) var(--ease-out),
+    background-color var(--dur-normal) var(--ease-out);
+}
+.track-card[data-active="true"] {
+  opacity: 1;
+  transform: scale(1);
+  border-color: rgb(var(--rgb-signal) / 0.42);
+  background-color: rgb(var(--rgb-surface-2) / 0.9);
+}
+
+.track-card .trk-glow {
+  opacity: 0;
+  transition: opacity var(--dur-cine) var(--ease-out);
+}
+.track-card[data-active="true"] .trk-glow {
+  opacity: 1;
+}
+
+.track-card .trk-n,
+.track-card .trk-bullet {
+  color: var(--muted-dim);
+  transition: color var(--dur-normal) var(--ease-out);
+}
+.track-card[data-active="true"] .trk-n {
+  color: var(--signal);
+}
+.track-card[data-active="true"] .trk-bullet {
+  background: var(--signal);
+}
+
+.track-card .trk-line {
+  stroke-dasharray: 240;
+  stroke-dashoffset: 204;
+  stroke-opacity: 0.16;
+  transition:
+    stroke-dashoffset var(--dur-cine) var(--ease-out),
+    stroke-opacity var(--dur-normal) var(--ease-out);
+}
+.track-card[data-active="true"] .trk-line {
+  stroke-dashoffset: 0;
+  stroke-opacity: 0.45;
+}
+
+.track-card .trk-dot {
+  opacity: 0.35;
+  transform: scale(0.6);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out);
+}
+.track-card[data-active="true"] .trk-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* assessment sweep, only ever runs on the active card */
+.track-card .trk-sweep {
+  opacity: 0;
+}
+.track-card[data-active="true"] .trk-sweep {
+  animation: trk-sweep 3.8s var(--ease-out) infinite;
+}
+@keyframes trk-sweep {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 0.6; }
+  55% { opacity: 0; }
+  100% { transform: translateX(300px); opacity: 0; }
+}
+
+/* --- methodology stages --- */
+.stage-panel {
+  flex-grow: 1;
+  flex-basis: 0;
+  border-color: var(--line);
+  background-color: rgb(var(--rgb-surface) / 0.5);
+  transition:
+    flex-grow var(--dur-cine) var(--ease-out),
+    border-color var(--dur-cine) var(--ease-out),
+    background-color var(--dur-cine) var(--ease-out);
+}
+.stage-panel[data-active="true"] {
+  flex-grow: 2.8;
+  border-color: rgb(var(--rgb-signal) / 0.4);
+  background-color: rgb(var(--rgb-surface-2) / 0.9);
+}
+
+.stage-panel .stage-title {
+  font-size: 1.5rem;
+  color: var(--muted);
+  transition:
+    font-size var(--dur-cine) var(--ease-out),
+    color var(--dur-cine) var(--ease-out);
+}
+.stage-panel[data-active="true"] .stage-title {
+  font-size: 2.25rem;
+  color: var(--ink);
+}
+
+.stage-panel .stage-n {
+  color: var(--muted-dim);
+  transition: color var(--dur-normal) var(--ease-out);
+}
+.stage-panel[data-active="true"] .stage-n {
+  color: var(--signal);
+}
+
+.stage-panel .stage-tick {
+  width: 12px;
+  background: rgb(var(--rgb-hair) / 0.3);
+  transition:
+    width var(--dur-normal) var(--ease-out),
+    background-color var(--dur-normal) var(--ease-out);
+}
+.stage-panel[data-active="true"] .stage-tick {
+  width: 32px;
+  background: var(--signal);
+}
+
+/* grid-rows trick: animates to intrinsic height without measuring */
+.stage-detail {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-normal) var(--ease-out),
+    opacity var(--dur-normal) var(--ease-out);
+}
+.stage-detail > * {
+  overflow: hidden;
+  min-height: 0;
+}
+.stage-panel[data-active="true"] .stage-detail {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.stage-status {
+  opacity: 0.35;
+  color: var(--muted-dim);
+  transition:
+    opacity var(--dur-normal) var(--ease-out),
+    color var(--dur-normal) var(--ease-out);
+}
+.stage-panel[data-active="true"] .stage-status {
+  opacity: 0.9;
+  color: var(--signal);
+}
+
+.rail-dot {
+  border-color: rgb(var(--rgb-hair) / 0.3);
+  background: transparent;
+  transform: scale(1);
+  transition:
+    border-color var(--dur-normal) var(--ease-out),
+    background-color var(--dur-normal) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out);
+}
+.rail-dot[data-state="done"],
+.rail-dot[data-state="active"] {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+.rail-dot[data-state="active"] {
+  transform: scale(1.35);
+}
+.rail-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-cine) var(--ease-out);
+}
+.rail-fill[data-state="done"] {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-card,
+  .stage-panel,
+  .stage-detail,
+  .rail-dot,
+  .rail-fill {
+    transition: none;
+  }
+  .track-card[data-active="true"] .trk-sweep {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Logo lockup: two rasters, one per ground. The wordmark is
+   charcoal in the source artwork, so the dark-ground variant has
+   its AETH glyphs recoloured; everything else is identical.
+   ============================================================ */
+.logo-light {
+  opacity: 0;
+}
+.logo-dark {
+  opacity: 1;
+}
+:root[data-theme="light"] .logo-light {
+  opacity: 1;
+}
+:root[data-theme="light"] .logo-dark {
+  opacity: 0;
+}
+
+/* ============================================================
+   Surface craft. Three cheap, transform-free touches that carry
+   most of the "expensive" feel: a fine grain so large dark areas
+   are not flat, a soft top light, and a gradient hairline on
+   elevated surfaces.
+   ============================================================ */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -40;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+:root[data-theme="light"] .grain {
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+}
+
+/* Elevated cards get a hairline that is brighter at the top edge, the way a
+   real surface catches light. Cheaper and calmer than a drop shadow. */
+.svc-card::after,
+.track-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.05),
+    transparent 38%
+  );
+}
+:root[data-theme="light"] .svc-card::after,
+:root[data-theme="light"] .track-card::after {
+  background: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.8),
+    transparent 42%
+  );
+}
+
+/* Light mode needs firmer separation: cards on an almost-white page lose their
+   edges without a real shadow. */
+:root[data-theme="light"] .svc-card,
+:root[data-theme="light"] .track-card {
+  box-shadow:
+    0 1px 2px rgb(var(--rgb-hair) / 0.06),
+    0 8px 24px -12px rgb(var(--rgb-hair) / 0.14);
+}
+:root[data-theme="light"] .svc-card:hover,
+:root[data-theme="light"] .svc-card:focus-within {
+  box-shadow:
+    0 2px 4px rgb(var(--rgb-hair) / 0.08),
+    0 18px 40px -16px rgb(var(--rgb-hair) / 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Attack path: escalation meters and the active-node treatment.
+   ============================================================ */
+.impact-seg {
+  background: rgb(var(--rgb-hair) / 0.18);
+  transition:
+    background-color var(--dur-normal) var(--ease-out),
+    box-shadow var(--dur-normal) var(--ease-out);
+}
+.impact-seg[data-on="true"] {
+  background: var(--seg);
+}
+
+/* the step being described in the panel gets weight in the diagram */
+[data-node] .ap-label {
+  transition: opacity var(--dur-normal) var(--ease-out);
+}
+[data-node][data-current="true"] .ap-label text:last-child {
+  fill: var(--ink);
+  font-weight: 600;
+}
+[data-node][data-current="true"] .ap-hot circle:last-child {
+  r: 7;
+}
+[data-node] .ap-hot circle:last-child {
+  transition: r var(--dur-normal) var(--ease-out);
+}
+
+@keyframes ap-pulse-out {
+  0% { transform: scale(1); opacity: 0.55; }
+  70% { transform: scale(1.75); opacity: 0; }
+  100% { transform: scale(1.75); opacity: 0; }
+}
+[data-node][data-current="true"] .ap-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ap-pulse-out 2.4s var(--ease-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-node][data-current="true"] .ap-pulse {
+    animation: none;
+  }
+  .impact-seg {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   Variable-weight breathing text (AnimatedText).
+
+   One keyframe for every instance, driven by custom properties,
+   so instances with different ranges cannot collide over a
+   shared keyframe name.
+   ============================================================ */
+@keyframes text-breath {
+  from {
+    font-weight: var(--w-min, 200);
+  }
+  to {
+    font-weight: var(--w-max, 800);
+  }
+}
+
+.animated-text-char {
+  display: inline-block;
+  white-space: pre;
+  animation-name: text-breath;
+  animation-direction: alternate;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  animation-fill-mode: both;
+  /* the axis only exists on the variable face */
+  font-variation-settings: "wght" var(--w-min, 200);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-text-char {
+    animation: none;
+    font-weight: 600;
+  }
 }
