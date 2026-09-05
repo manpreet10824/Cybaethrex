@@ -51,6 +51,15 @@
   --ai: #7fa8d9;
   --amber: #f8b03c;
 
+  /* shadcn's primitives style their own invalid state with
+     `aria-invalid:border-destructive`. The bridge below aliases
+     --color-destructive to --destructive, but nothing ever assigned it, so an
+     invalid field drew a near-black border from the currentColor fallback.
+     Late binding means one declaration follows the theme: --threat is
+     redefined under [data-theme="light"] and this picks it up. */
+  --destructive: var(--threat);
+  --destructive-foreground: #ffffff;
+
   /* per-theme intensities */
   --grid-alpha: 0.06;
   --grid-alpha-fine: 0.05;

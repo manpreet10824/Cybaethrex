@@ -34,6 +34,8 @@ function Field({
   required = false,
   textarea = false,
   autoComplete,
+  invalid = false,
+  hint,
 }: {
   id: string;
   label: string;
@@ -41,6 +43,8 @@ function Field({
   required?: boolean;
   textarea?: boolean;
   autoComplete?: string;
+  invalid?: boolean;
+  hint?: string;
 }) {
   const [focused, setFocused] = useState(false);
   const shared = {
@@ -48,6 +52,9 @@ function Field({
     name: id,
     required,
     autoComplete,
+    // shadcn's primitives carry their own aria-invalid treatment, which now
+    // resolves to the brand threat colour, so no override is needed here
+    "aria-invalid": invalid || undefined,
     onFocus: () => setFocused(true),
     onBlur: () => setFocused(false),
     className: FIELD_CLASS,
@@ -58,10 +65,19 @@ function Field({
       <Label
         htmlFor={id}
         className="mono text-[10px] tracking-[0.16em] transition-colors duration-200"
-        style={{ color: focused ? "var(--signal)" : "var(--muted-dim)" }}
+        style={{
+          color: invalid
+            ? "var(--threat)"
+            : focused
+              ? "var(--signal)"
+              : "var(--muted-dim)",
+        }}
       >
         {label}
         {required ? <span className="text-threat"> *</span> : null}
+        {hint ? (
+          <span className="ml-2 tracking-normal text-muted-dim">{hint}</span>
+        ) : null}
       </Label>
 
       {textarea ? (
@@ -104,10 +120,19 @@ function mailtoFallback(values: {
   return `mailto:${CONTACT.emails[0]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+/** What the server means by each field name, in the reader's terms. */
+const FIELD_PROBLEM: Record<string, string> = {
+  name: "add your name",
+  email: "check the email address",
+  context: "write at least a few words in the message",
+  company: "shorten the company name",
+};
+
 export function ContactForm() {
   const { reduced } = useMotionFlags();
   const [status, setStatus] = useState<Status>("idle");
   const [problem, setProblem] = useState("");
+  const [invalid, setInvalid] = useState<string[]>([]);
   const [fallback, setFallback] = useState("");
   const [engagement, setEngagement] = useState<string[]>([ENGAGEMENTS[0]]);
 
@@ -129,6 +154,8 @@ export function ContactForm() {
 
     setStatus("sending");
     setProblem("");
+    setInvalid([]);
+    setFallback("");
 
     try {
       const res = await fetch("/api/contact", {
@@ -142,16 +169,33 @@ export function ContactForm() {
         return;
       }
 
-      setProblem(
-        res.status === 429
-          ? "That is several messages in a short time. Give it a few minutes, or email us directly."
-          : res.status === 422
-            ? "Some details did not look right. Check the email address and that the message is a line or two long."
+      if (res.status === 422) {
+        const payload = (await res
+          .json()
+          .catch(() => ({}))) as { fields?: string[] };
+        const fields = payload.fields ?? [];
+        setInvalid(fields);
+
+        // Name the fields. "Some details did not look right" leaves the
+        // reader to guess which of four it was, which is how this got
+        // reported as a bug in the first place.
+        const asks = fields
+          .map((f) => FIELD_PROBLEM[f])
+          .filter(Boolean) as string[];
+        setProblem(
+          asks.length
+            ? `Please ${asks.length > 1 ? `${asks.slice(0, -1).join(", ")} and ${asks[asks.length - 1]}` : asks[0]}.`
+            : "Some details did not look right.",
+        );
+      } else {
+        setProblem(
+          res.status === 429
+            ? "That is several messages in a short time. Give it a few minutes, or email us directly."
             : "We could not deliver that just now.",
-      );
-      // a 422 is the reader's to fix; anything else is ours, so offer the
-      // route that does not depend on us
-      if (res.status !== 422) setFallback(mailtoFallback(values));
+        );
+        // not the reader's fault, so offer the route that does not depend on us
+        setFallback(mailtoFallback(values));
+      }
       setStatus("error");
     } catch {
       setProblem("We could not reach the server. Your connection may be down.");
@@ -224,8 +268,19 @@ export function ContactForm() {
               variants={reduced ? undefined : cineIn}
               className="grid gap-6 sm:grid-cols-2"
             >
-              <Field id="name" label="Name" required autoComplete="name" />
-              <Field id="company" label="Company" autoComplete="organization" />
+              <Field
+                id="name"
+                label="Name"
+                required
+                autoComplete="name"
+                invalid={invalid.includes("name")}
+              />
+              <Field
+                id="company"
+                label="Company"
+                autoComplete="organization"
+                invalid={invalid.includes("company")}
+              />
             </motion.div>
 
             <motion.div variants={reduced ? undefined : cineIn}>
@@ -235,6 +290,7 @@ export function ContactForm() {
                 type="email"
                 required
                 autoComplete="email"
+                invalid={invalid.includes("email")}
               />
             </motion.div>
 
@@ -274,6 +330,8 @@ export function ContactForm() {
                 label="Where are you now, and what are you aiming at?"
                 textarea
                 required
+                hint="a sentence is enough"
+                invalid={invalid.includes("context")}
               />
             </motion.div>
 

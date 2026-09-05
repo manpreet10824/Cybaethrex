@@ -45,9 +45,14 @@ const FROM =
   process.env.CONTACT_FROM || "Cybaethrex Website <onboarding@resend.dev>";
 
 const LIMITS = {
+  nameMin: 2,
   name: 100,
   company: 200,
   email: 200,
+  // Low enough that a terse real enquiry ("Need VAPT") gets through, high
+  // enough to reject an empty gesture. The form states it, so it is never a
+  // surprise.
+  contextMin: 5,
   context: 5000,
 } as const;
 
@@ -183,12 +188,6 @@ export async function POST(request: Request) {
 
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (rateLimited(ip)) {
-    return NextResponse.json(
-      { error: "rate_limited", message: "Too many messages. Try again later." },
-      { status: 429 },
-    );
-  }
 
   let body: Record<string, unknown>;
   try {
@@ -213,18 +212,31 @@ export async function POST(request: Request) {
     : [];
 
   const errors: string[] = [];
-  if (name.length < 2 || name.length > LIMITS.name) errors.push("name");
+  if (name.length < LIMITS.nameMin || name.length > LIMITS.name)
+    errors.push("name");
   if (
     email.length > LIMITS.email ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)
   )
     errors.push("email");
-  if (context.length < 10 || context.length > LIMITS.context)
+  if (context.length < LIMITS.contextMin || context.length > LIMITS.context)
     errors.push("context");
   if (company.length > LIMITS.company) errors.push("company");
 
+  // Returned so the form can name the field rather than ask the reader to
+  // guess which of four it was.
   if (errors.length) {
     return NextResponse.json({ error: "invalid", fields: errors }, { status: 422 });
+  }
+
+  // Throttle only what would otherwise be sent. Counting rejected submissions
+  // punishes someone who mistypes their address twice, which is the opposite
+  // of the intent.
+  if (rateLimited(ip)) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "Too many messages. Try again later." },
+      { status: 429 },
+    );
   }
 
   const subject = company
