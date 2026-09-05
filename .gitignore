@@ -42,3 +42,12 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# editor and tooling files that appear in the working tree but are not part
+# of the site. AGENTS.md is written by `next dev` on every run.
+AGENTS.md
+CLAUDE.md
+.claude/
+.cursor/
+.vscode/
+.idea/
