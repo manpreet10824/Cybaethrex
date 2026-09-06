@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useSyncExternalStore,
 } from "react";
@@ -17,7 +16,7 @@ export const THEME_KEY = "cyb-theme";
  * Runs before the body paints, so the first frame is already in the right
  * theme. Kept as a string because it is injected verbatim into the document.
  */
-export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_KEY}');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_KEY}');if(t!=='light'&&t!=='dark'){t='dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
 
 type Ctx = {
   theme: Theme;
@@ -53,14 +52,6 @@ const serverTheme = (): Theme => "dark";
 
 const noopSubscribe = () => () => {};
 
-function storedChoice(): string | null {
-  try {
-    return window.localStorage.getItem(THEME_KEY);
-  } catch {
-    return null;
-  }
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const theme = useSyncExternalStore(subscribeToTheme, readTheme, serverTheme);
   const ready = useSyncExternalStore(
@@ -68,22 +59,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     () => true,
     () => false,
   );
-
-  // Follow the OS while the visitor has not made an explicit choice. This only
-  // writes to the DOM; the store above turns that into a render.
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: light)");
-    const onChange = (e: MediaQueryListEvent) => {
-      const stored = storedChoice();
-      if (stored === "light" || stored === "dark") return;
-      document.documentElement.setAttribute(
-        "data-theme",
-        e.matches ? "light" : "dark",
-      );
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   const setTheme = useCallback((t: Theme) => {
     document.documentElement.setAttribute("data-theme", t);
