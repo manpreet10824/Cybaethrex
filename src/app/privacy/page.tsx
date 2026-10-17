@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Heading, PageHero, Section } from "@/components/ui/Layout";
 import { Reveal } from "@/components/ui/Reveal";
 import { CTA } from "@/components/sections/HomeSections";
-import { CONTACT } from "@/lib/content";
+import { BRAND, CONTACT } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Privacy policy · Cybaethrex",
@@ -122,7 +122,7 @@ export default function PrivacyPage() {
             Your data, <span className="text-signal">kept to what we need.</span>
           </>
         }
-        lede="This policy covers this website and Cybaethrex Publisher, the app we use to plan, approve and publish marketing content for our own business and for client businesses that connect their social and advertising accounts."
+        lede={`${BRAND.legalName} ("Cybaethrex", "we") runs this website and Cybaethrex Publisher, the app we use to plan, approve and publish marketing content for our own business and for client businesses that connect their social and advertising accounts. This policy covers both.`}
         meta={[
           { label: "Last updated", value: UPDATED },
           { label: "Contact", value: email },
