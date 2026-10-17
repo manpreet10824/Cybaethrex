@@ -7,6 +7,8 @@
 
 export const BRAND = {
   name: "Cybaethrex",
+  /** The registered company, as on the certificate of incorporation. */
+  legalName: "Cybaethrex Private Limited",
   /** Cyber + Aethics + Rex */
   etymology: ["Cyber", "Aethics", "Rex"],
   tagline: "Cybersecurity consulting",

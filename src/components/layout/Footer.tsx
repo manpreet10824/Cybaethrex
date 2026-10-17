@@ -112,7 +112,7 @@ export function Footer() {
 
         <div className="mt-14 flex flex-col gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="mono text-[11px] tracking-[0.12em] text-muted-dim">
-            © {new Date().getFullYear()} CYBAETHREX · {CONTACT.location.toUpperCase()}
+            © {new Date().getFullYear()} {BRAND.legalName.toUpperCase()} · {CONTACT.location.toUpperCase()}
           </p>
           <p className="mono text-[11px] tracking-[0.12em] text-muted-dim">
             ASSESS · ADVISE · ARCHITECT · ASSURE
