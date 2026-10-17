@@ -41,7 +41,8 @@ const COLUMNS = [
     title: "Contact",
     links: [
       ["Start a conversation", "/contact"],
-      ["Privacy policy", "/contact"],
+      ["Privacy policy", "/privacy"],
+      ["Data deletion", "/data-deletion"],
       ["Terms of service", "/contact"],
       ["Responsible disclosure", "/responsible-disclosure"],
     ],

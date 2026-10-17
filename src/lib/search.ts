@@ -37,6 +37,8 @@ const PAGES: SearchEntry[] = [
   { id: "p-contact", group: "Pages", title: "Contact", sub: "Start a conversation", href: "/contact", terms: "email enquiry get in touch scope quote" },
   { id: "p-engage", group: "Pages", title: "Engagement models", sub: "Four ways to work with us", href: "/services#engage", terms: "pricing retainer assessment programme commercial" },
   { id: "p-disclosure", group: "Pages", title: "Responsible disclosure", sub: "Report a security issue", href: "/responsible-disclosure", terms: "vulnerability report security.txt bug bounty" },
+  { id: "p-privacy", group: "Pages", title: "Privacy policy", sub: "What we collect and why", href: "/privacy", terms: "privacy data gdpr dpdp personal information cookies" },
+  { id: "p-deletion", group: "Pages", title: "Data deletion", sub: "Remove access, delete your data", href: "/data-deletion", terms: "delete data remove facebook app disconnect erasure" },
 ];
 
 /**
