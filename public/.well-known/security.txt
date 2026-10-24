@@ -1,0 +1,8 @@
+# Report security issues in Cybaethrex websites and services.
+# Policy, scope and safe-harbour terms are on the disclosure page below.
+Contact: mailto:support@cybaethrex.com
+Policy: https://cybaethrex.com/responsible-disclosure
+Canonical: https://cybaethrex.com/.well-known/security.txt
+Preferred-Languages: en
+# RFC 9116 requires an expiry. Renew this date before it passes.
+Expires: 2027-10-23T00:00:00.000Z
