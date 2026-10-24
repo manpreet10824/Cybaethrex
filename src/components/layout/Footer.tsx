@@ -60,7 +60,7 @@ export function Footer() {
       <div className="relative mx-auto w-full max-w-[1240px] px-6 py-16 sm:px-10">
         <div className="grid gap-12 lg:grid-cols-[1fr_2.2fr]">
           <Reveal>
-            <Logo height={28} />
+            <Logo height={36} />
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-muted">
               {BRAND.positioning} AI risk, governance and technology advisory,
               delivered by senior practitioners.

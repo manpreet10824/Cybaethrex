@@ -213,7 +213,7 @@ export function Nav() {
             className="flex items-center gap-3"
             aria-label={onTraining ? "Cybaethrex Training home" : "Cybaethrex home"}
           >
-            <Logo height={scrolled ? 21 : 25} priority />
+            <Logo height={scrolled ? 30 : 36} priority />
             {onTraining ? (
               <span className="mono hidden border-l border-line-strong pl-3 text-[10px] tracking-[0.18em] text-muted-dim sm:inline">
                 TRAINING

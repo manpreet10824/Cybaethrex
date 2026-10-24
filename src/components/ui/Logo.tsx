@@ -51,7 +51,7 @@ export function Logo({
         alt="Cybaethrex"
         width={808}
         height={173}
-        sizes="160px"
+        sizes="200px"
         priority={priority}
         className="logo-light absolute inset-0 h-full w-full object-contain"
       />
@@ -61,7 +61,7 @@ export function Logo({
         aria-hidden
         width={808}
         height={173}
-        sizes="160px"
+        sizes="200px"
         priority={priority}
         className="logo-dark absolute inset-0 h-full w-full object-contain"
       />
